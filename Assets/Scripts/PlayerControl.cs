@@ -5,22 +5,45 @@ using System.Collections;
 public class PlayerControl : MonoBehaviour {
 
     private Rigidbody rb;
+    private Vector3 movement;
     public float Power;
     public float JumpPower;
+    private int floorMask;
     private float hor;
     private float ver;
     
-	void Start ()
+	void Awake ()
 	{
 	    rb = GetComponent<Rigidbody>();
+	    floorMask = LayerMask.GetMask("Floor");
 	}
 	
 	void Update ()
 	{
-	    hor = Input.GetAxis("Horizontal");
-	    ver = Input.GetAxis("Vertical");
-        transform.Translate(Vector3.forward * Power * ver * Time.deltaTime);
-        transform.Translate(Vector3.right * Power * hor * Time.deltaTime);
+	    
+	}
+
+    void Move(float h, float v)
+    {
+        movement.Set(h, 0f, v);
+        movement = movement.normalized*Power*Time.deltaTime;
+        rb.MovePosition(transform.position + movement);
+    }
+
+    void Turn()
+    {
+        Ray camRay = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit floorHit;
+        if (Physics.Raycast(camRay, out floorHit, 100f))
+        {
+            Vector3 playerToMouse = floorHit.point - transform.position;
+            playerToMouse.y = 0f;
+
+            Debug.Log(playerToMouse);
+
+            Quaternion newRotation = Quaternion.LookRotation(playerToMouse);
+            rb.MoveRotation(newRotation);
+        }
     }
 
     void FixedUpdate()
@@ -29,5 +52,10 @@ public class PlayerControl : MonoBehaviour {
         {
             rb.AddForce(Vector3.up * JumpPower);
         }
+
+        hor = Input.GetAxis("Horizontal");
+        ver = Input.GetAxis("Vertical");
+        Move(hor, ver);
+        Turn();
     }
 }
